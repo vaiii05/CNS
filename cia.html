@@ -1,42 +1,55 @@
-```html
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>CNS Crypto Lab Toolkit</title>
+<title>CNS Cryptography Toolkit</title>
 
 <style>
 
 body{
-font-family: Arial;
-background:#0f172a;
+font-family: 'Segoe UI';
+background: linear-gradient(135deg,#020617,#0f172a);
 color:white;
 display:flex;
 justify-content:center;
 align-items:center;
 height:100vh;
+margin:0;
 }
 
 .container{
-background:#1e293b;
+width:650px;
 padding:30px;
-border-radius:12px;
-width:600px;
-box-shadow:0 10px 25px rgba(0,0,0,0.5);
+border-radius:15px;
+background:#0f172a;
+box-shadow:0 0 40px rgba(0,255,255,0.2);
+border:1px solid rgba(0,255,255,0.2);
 }
 
 h1{
 text-align:center;
-margin-bottom:20px;
+margin-bottom:25px;
+color:#22d3ee;
+letter-spacing:2px;
 }
 
-select,input,textarea,button{
-width:100%;
+label{
 margin-top:10px;
+display:block;
+font-size:14px;
+color:#94a3b8;
+}
+
+select,input,textarea{
+width:100%;
+margin-top:5px;
 padding:10px;
 border-radius:8px;
 border:none;
-font-size:14px;
+background:#020617;
+color:white;
+border:1px solid #1e293b;
 }
 
 textarea{
@@ -45,21 +58,33 @@ resize:none;
 }
 
 button{
-background:#3b82f6;
-color:white;
+width:48%;
+padding:10px;
+margin-top:15px;
+border:none;
+border-radius:8px;
+background:#22d3ee;
+color:black;
+font-weight:bold;
 cursor:pointer;
-margin-top:10px;
 }
 
 button:hover{
-background:#2563eb;
+background:#06b6d4;
+}
+
+.buttons{
+display:flex;
+justify-content:space-between;
 }
 
 .result{
-margin-top:15px;
+margin-top:20px;
 background:#020617;
-padding:10px;
-border-radius:6px;
+padding:15px;
+border-radius:10px;
+border:1px solid #1e293b;
+min-height:50px;
 word-wrap:break-word;
 }
 
@@ -72,23 +97,26 @@ word-wrap:break-word;
 
 <h1>CNS Crypto Toolkit</h1>
 
-<label>Select Algorithm</label>
-<select id="algorithm">
+<label>Algorithm</label>
+<select id="algo">
 <option value="caesar">Caesar Cipher</option>
 <option value="vigenere">Vigenere Cipher</option>
+<option value="playfair">Playfair Cipher</option>
+<option value="hill">Hill Cipher (2x2)</option>
 <option value="rail">Rail Fence Cipher</option>
-<option value="row">Row Column Transposition</option>
-<option value="aes">AES</option>
+<option value="column">Row/Column Transposition</option>
 </select>
 
-<label>Key / Shift</label>
-<input id="key" placeholder="Enter key or shift">
+<label>Key</label>
+<input id="key" placeholder="Enter key / shift / keyword">
 
 <label>Input Text</label>
-<textarea id="inputText"></textarea>
+<textarea id="text"></textarea>
 
+<div class="buttons">
 <button onclick="encrypt()">Encrypt</button>
 <button onclick="decrypt()">Decrypt</button>
+</div>
 
 <div class="result" id="output"></div>
 
@@ -96,226 +124,329 @@ word-wrap:break-word;
 
 <script>
 
-function caesarEncrypt(text,shift){
+/* Caesar */
 
-let result="";
+function caesar(text,shift,mode){
 
-for(let i=0;i<text.length;i++){
+let result=""
 
-let char=text.charCodeAt(i);
+for(let c of text){
 
-if(char>=65 && char<=90){
-result+=String.fromCharCode((char-65+shift)%26+65);
+if(/[a-z]/i.test(c)){
+
+let base=c==c.toUpperCase()?65:97
+
+let val=c.charCodeAt(0)-base
+
+if(mode=="enc")
+val=(val+shift)%26
+else
+val=(val-shift+26)%26
+
+result+=String.fromCharCode(val+base)
+
 }
-else if(char>=97 && char<=122){
-result+=String.fromCharCode((char-97+shift)%26+97);
+else result+=c
+
+}
+
+return result
+}
+
+
+/* Vigenere */
+
+function vigenere(text,key,mode){
+
+key=key.toLowerCase()
+
+let j=0
+let result=""
+
+for(let c of text){
+
+if(/[a-z]/i.test(c)){
+
+let base=c==c.toUpperCase()?65:97
+
+let shift=key.charCodeAt(j%key.length)-97
+
+let val=c.charCodeAt(0)-base
+
+if(mode=="enc")
+val=(val+shift)%26
+else
+val=(val-shift+26)%26
+
+result+=String.fromCharCode(val+base)
+
+j++
+
+}
+else result+=c
+
+}
+
+return result
+
+}
+
+
+/* Rail Fence */
+
+function railEncrypt(text,key){
+
+let rails=Array.from({length:key},()=>[])
+
+let rail=0
+let dir=1
+
+for(let c of text){
+
+rails[rail].push(c)
+
+rail+=dir
+
+if(rail==0||rail==key-1) dir*=-1
+
+}
+
+return rails.flat().join("")
+
+}
+
+function railDecrypt(cipher,key){
+
+let arr=Array.from({length:key},()=>Array(cipher.length).fill(null))
+
+let rail=0,dir=1
+
+for(let i=0;i<cipher.length;i++){
+
+arr[rail][i]="*"
+
+rail+=dir
+
+if(rail==0||rail==key-1) dir*=-1
+
+}
+
+let index=0
+
+for(let r=0;r<key;r++)
+for(let c=0;c<cipher.length;c++)
+if(arr[r][c]=="*"&&index<cipher.length)
+arr[r][c]=cipher[index++]
+
+rail=0
+dir=1
+let res=""
+
+for(let i=0;i<cipher.length;i++){
+
+res+=arr[rail][i]
+
+rail+=dir
+
+if(rail==0||rail==key-1) dir*=-1
+
+}
+
+return res
+
+}
+
+
+/* Column Transposition */
+
+function columnEncrypt(text,key){
+
+let cols=key.length
+let rows=Math.ceil(text.length/cols)
+
+let grid=[]
+
+let k=0
+
+for(let r=0;r<rows;r++){
+
+grid[r]=[]
+
+for(let c=0;c<cols;c++)
+grid[r][c]=text[k++]||"X"
+
+}
+
+let order=[...key].map((c,i)=>[c,i]).sort()
+
+let result=""
+
+for(let o of order)
+for(let r=0;r<rows;r++)
+result+=grid[r][o[1]]
+
+return result
+
+}
+
+
+/* Playfair */
+
+function playfairPrepare(key){
+
+key=key.toUpperCase().replace(/J/g,"I")
+
+let seen={}
+let matrix=[]
+
+let alphabet="ABCDEFGHIKLMNOPQRSTUVWXYZ"
+
+key+=alphabet
+
+for(let c of key){
+
+if(!seen[c]){
+
+matrix.push(c)
+seen[c]=true
+
+}
+
+}
+
+let grid=[]
+
+while(matrix.length)
+grid.push(matrix.splice(0,5))
+
+return grid
+
+}
+
+function playfairEncrypt(text,key){
+
+let grid=playfairPrepare(key)
+
+text=text.toUpperCase().replace(/J/g,"I").replace(/ /g,"")
+
+let pairs=[]
+
+for(let i=0;i<text.length;i+=2){
+
+let a=text[i]
+let b=text[i+1]||"X"
+
+if(a==b){
+b="X"
+i--
+}
+
+pairs.push([a,b])
+
+}
+
+let res=""
+
+for(let p of pairs){
+
+let r1,c1,r2,c2
+
+for(let r=0;r<5;r++)
+for(let c=0;c<5;c++){
+
+if(grid[r][c]==p[0]){r1=r;c1=c}
+if(grid[r][c]==p[1]){r2=r;c2=c}
+
+}
+
+if(r1==r2){
+
+res+=grid[r1][(c1+1)%5]
+res+=grid[r2][(c2+1)%5]
+
+}
+else if(c1==c2){
+
+res+=grid[(r1+1)%5][c1]
+res+=grid[(r2+1)%5][c2]
+
 }
 else{
-result+=text[i];
-}
 
-}
-
-return result;
-
-}
-
-function caesarDecrypt(text,shift){
-return caesarEncrypt(text,26-shift);
-}
-
-
-function vigenereEncrypt(text,key){
-
-key=key.toLowerCase();
-
-let result="";
-let j=0;
-
-for(let i=0;i<text.length;i++){
-
-let c=text[i];
-
-if(/[a-z]/i.test(c)){
-
-let shift=key.charCodeAt(j%key.length)-97;
-
-let base=c===c.toUpperCase()?65:97;
-
-result+=String.fromCharCode((c.charCodeAt(0)-base+shift)%26+base);
-
-j++;
-
-}else{
-result+=c;
-}
-
-}
-
-return result;
-
-}
-
-
-function vigenereDecrypt(text,key){
-
-key=key.toLowerCase();
-
-let result="";
-let j=0;
-
-for(let i=0;i<text.length;i++){
-
-let c=text[i];
-
-if(/[a-z]/i.test(c)){
-
-let shift=key.charCodeAt(j%key.length)-97;
-
-let base=c===c.toUpperCase()?65:97;
-
-result+=String.fromCharCode((c.charCodeAt(0)-base-shift+26)%26+base);
-
-j++;
-
-}else{
-result+=c;
-}
-
-}
-
-return result;
-
-}
-
-
-
-function railEncrypt(text,rails){
-
-let fence=[];
-for(let i=0;i<rails;i++) fence[i]=[];
-
-let rail=0;
-let dir=1;
-
-for(let char of text){
-
-fence[rail].push(char);
-
-rail+=dir;
-
-if(rail==rails-1 || rail==0) dir*=-1;
-
-}
-
-return fence.flat().join("");
-
-}
-
-
-function railDecrypt(cipher,rails){
-
-let fence=Array.from({length:rails},()=>Array(cipher.length).fill(null));
-
-let rail=0;
-let dir=1;
-
-for(let i=0;i<cipher.length;i++){
-
-fence[rail][i]="*";
-
-rail+=dir;
-
-if(rail==rails-1 || rail==0) dir*=-1;
-
-}
-
-let index=0;
-
-for(let r=0;r<rails;r++){
-
-for(let c=0;c<cipher.length;c++){
-
-if(fence[r][c]=="*" && index<cipher.length){
-fence[r][c]=cipher[index++];
-}
+res+=grid[r1][c2]
+res+=grid[r2][c1]
 
 }
 
 }
 
-let result="";
-
-rail=0;
-dir=1;
-
-for(let i=0;i<cipher.length;i++){
-
-result+=fence[rail][i];
-
-rail+=dir;
-
-if(rail==rails-1 || rail==0) dir*=-1;
-
-}
-
-return result;
+return res
 
 }
 
 
+/* Hill Cipher 2x2 */
+
+function hillEncrypt(text,key){
+
+text=text.toUpperCase().replace(/ /g,"")
+
+let k=key.split(",").map(Number)
+
+let res=""
+
+for(let i=0;i<text.length;i+=2){
+
+let a=text.charCodeAt(i)-65
+let b=text.charCodeAt(i+1)-65
+
+let c1=(k[0]*a+k[1]*b)%26
+let c2=(k[2]*a+k[3]*b)%26
+
+res+=String.fromCharCode(c1+65)+String.fromCharCode(c2+65)
+
+}
+
+return res
+
+}
+
+
+/* Main */
 
 function encrypt(){
 
-let algo=document.getElementById("algorithm").value;
+let algo=document.getElementById("algo").value
+let text=document.getElementById("text").value
+let key=document.getElementById("key").value
 
-let text=document.getElementById("inputText").value;
+let out=""
 
-let key=document.getElementById("key").value;
+if(algo=="caesar") out=caesar(text,parseInt(key),"enc")
+if(algo=="vigenere") out=vigenere(text,key,"enc")
+if(algo=="rail") out=railEncrypt(text,parseInt(key))
+if(algo=="column") out=columnEncrypt(text,key)
+if(algo=="playfair") out=playfairEncrypt(text,key)
+if(algo=="hill") out=hillEncrypt(text,key)
 
-let output="";
-
-if(algo==="caesar"){
-output=caesarEncrypt(text,parseInt(key));
-}
-
-if(algo==="vigenere"){
-output=vigenereEncrypt(text,key);
-}
-
-if(algo==="rail"){
-output=railEncrypt(text,parseInt(key));
-}
-
-document.getElementById("output").innerText=output;
+document.getElementById("output").innerText=out
 
 }
-
 
 
 function decrypt(){
 
-let algo=document.getElementById("algorithm").value;
+let algo=document.getElementById("algo").value
+let text=document.getElementById("text").value
+let key=document.getElementById("key").value
 
-let text=document.getElementById("inputText").value;
+let out=""
 
-let key=document.getElementById("key").value;
+if(algo=="caesar") out=caesar(text,parseInt(key),"dec")
+if(algo=="vigenere") out=vigenere(text,key,"dec")
+if(algo=="rail") out=railDecrypt(text,parseInt(key))
 
-let output="";
-
-if(algo==="caesar"){
-output=caesarDecrypt(text,parseInt(key));
-}
-
-if(algo==="vigenere"){
-output=vigenereDecrypt(text,key);
-}
-
-if(algo==="rail"){
-output=railDecrypt(text,parseInt(key));
-}
-
-document.getElementById("output").innerText=output;
+document.getElementById("output").innerText=out
 
 }
 
@@ -323,5 +454,3 @@ document.getElementById("output").innerText=output;
 
 </body>
 </html>
-```
-
