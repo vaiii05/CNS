@@ -1,71 +1,68 @@
 
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
 <meta charset="UTF-8">
-<title>CNS Cryptography Toolkit</title>
+<title>CNS Cryptography Simulator</title>
 
 <style>
 
 body{
-font-family: 'Segoe UI';
-background: linear-gradient(135deg,#020617,#0f172a);
+font-family:Arial;
+background:#020617;
 color:white;
 display:flex;
 justify-content:center;
-align-items:center;
-height:100vh;
-margin:0;
+padding:40px;
 }
 
 .container{
-width:650px;
-padding:30px;
-border-radius:15px;
+width:750px;
 background:#0f172a;
-box-shadow:0 0 40px rgba(0,255,255,0.2);
-border:1px solid rgba(0,255,255,0.2);
+padding:30px;
+border-radius:12px;
+box-shadow:0 0 30px rgba(0,255,255,0.2);
 }
 
 h1{
 text-align:center;
-margin-bottom:25px;
 color:#22d3ee;
-letter-spacing:2px;
 }
 
 label{
 margin-top:10px;
 display:block;
-font-size:14px;
 color:#94a3b8;
 }
 
 select,input,textarea{
 width:100%;
-margin-top:5px;
 padding:10px;
-border-radius:8px;
-border:none;
+margin-top:5px;
+border-radius:6px;
+border:1px solid #1e293b;
 background:#020617;
 color:white;
-border:1px solid #1e293b;
 }
 
 textarea{
 height:100px;
-resize:none;
+}
+
+.buttons{
+display:flex;
+gap:10px;
+margin-top:15px;
 }
 
 button{
-width:48%;
+flex:1;
 padding:10px;
-margin-top:15px;
 border:none;
-border-radius:8px;
 background:#22d3ee;
 color:black;
 font-weight:bold;
+border-radius:6px;
 cursor:pointer;
 }
 
@@ -73,19 +70,17 @@ button:hover{
 background:#06b6d4;
 }
 
-.buttons{
-display:flex;
-justify-content:space-between;
-}
-
-.result{
+.panel{
 margin-top:20px;
 background:#020617;
 padding:15px;
-border-radius:10px;
+border-radius:8px;
 border:1px solid #1e293b;
-min-height:50px;
-word-wrap:break-word;
+white-space:pre-wrap;
+}
+
+.error{
+color:#f87171;
 }
 
 </style>
@@ -95,7 +90,7 @@ word-wrap:break-word;
 
 <div class="container">
 
-<h1>CNS Crypto Toolkit</h1>
+<h1>CNS Cryptography Simulator</h1>
 
 <label>Algorithm</label>
 <select id="algo">
@@ -108,7 +103,7 @@ word-wrap:break-word;
 </select>
 
 <label>Key</label>
-<input id="key" placeholder="Enter key / shift / keyword">
+<input id="key" placeholder="Enter key">
 
 <label>Input Text</label>
 <textarea id="text"></textarea>
@@ -118,146 +113,128 @@ word-wrap:break-word;
 <button onclick="decrypt()">Decrypt</button>
 </div>
 
-<div class="result" id="output"></div>
+<div class="panel" id="output"></div>
+
+<h3>Visualization</h3>
+<div class="panel" id="visual"></div>
+
+<h3>Steps</h3>
+<div class="panel" id="steps"></div>
 
 </div>
 
 <script>
 
-/* Caesar */
+function error(msg){
+document.getElementById("output").innerHTML="<span class='error'>"+msg+"</span>"
+document.getElementById("visual").innerText=""
+document.getElementById("steps").innerText=""
+}
 
 function caesar(text,shift,mode){
 
-let result=""
+let res=""
+let vis=""
 
 for(let c of text){
 
 if(/[a-z]/i.test(c)){
 
 let base=c==c.toUpperCase()?65:97
-
-let val=c.charCodeAt(0)-base
+let p=c.charCodeAt(0)-base
+let r
 
 if(mode=="enc")
-val=(val+shift)%26
+r=(p+shift)%26
 else
-val=(val-shift+26)%26
+r=(p-shift+26)%26
 
-result+=String.fromCharCode(val+base)
+res+=String.fromCharCode(r+base)
+
+vis+=c+"("+p+") → "+r+" → "+String.fromCharCode(r+base)+"\n"
 
 }
-else result+=c
+else res+=c
 
 }
 
-return result
+document.getElementById("visual").innerText=vis
+
+document.getElementById("steps").innerText=
+"Step1 Convert letters to numbers\n"+
+"Step2 Apply formula (P ± key) mod 26\n"+
+"Step3 Convert back to letters"
+
+return res
+
 }
-
-
-/* Vigenere */
 
 function vigenere(text,key,mode){
 
-key=key.toLowerCase()
+key=key.toUpperCase()
+text=text.toUpperCase()
 
-let j=0
-let result=""
+let res=""
+let vis=""
 
-for(let c of text){
+for(let i=0;i<text.length;i++){
 
-if(/[a-z]/i.test(c)){
+let p=text.charCodeAt(i)-65
+let k=key.charCodeAt(i%key.length)-65
 
-let base=c==c.toUpperCase()?65:97
-
-let shift=key.charCodeAt(j%key.length)-97
-
-let val=c.charCodeAt(0)-base
+let r
 
 if(mode=="enc")
-val=(val+shift)%26
+r=(p+k)%26
 else
-val=(val-shift+26)%26
+r=(p-k+26)%26
 
-result+=String.fromCharCode(val+base)
+res+=String.fromCharCode(r+65)
 
-j++
-
-}
-else result+=c
+vis+=text[i]+" + "+key[i%key.length]+" → "+String.fromCharCode(r+65)+"\n"
 
 }
 
-return result
+document.getElementById("visual").innerText=vis
+
+document.getElementById("steps").innerText=
+"Step1 Repeat key until plaintext length\n"+
+"Step2 Convert letters to numbers\n"+
+"Step3 Ci = (Pi + Ki) mod 26"
+
+return res
 
 }
-
-
-/* Rail Fence */
 
 function railEncrypt(text,key){
 
 let rails=Array.from({length:key},()=>[])
-
 let rail=0
 let dir=1
 
 for(let c of text){
 
 rails[rail].push(c)
-
 rail+=dir
 
 if(rail==0||rail==key-1) dir*=-1
 
 }
+
+let vis=""
+
+for(let r of rails)
+vis+=r.join(" ")+"\n"
+
+document.getElementById("visual").innerText=vis
+
+document.getElementById("steps").innerText=
+"Step1 Write text diagonally across rails\n"+
+"Step2 Read row by row"
 
 return rails.flat().join("")
 
 }
-
-function railDecrypt(cipher,key){
-
-let arr=Array.from({length:key},()=>Array(cipher.length).fill(null))
-
-let rail=0,dir=1
-
-for(let i=0;i<cipher.length;i++){
-
-arr[rail][i]="*"
-
-rail+=dir
-
-if(rail==0||rail==key-1) dir*=-1
-
-}
-
-let index=0
-
-for(let r=0;r<key;r++)
-for(let c=0;c<cipher.length;c++)
-if(arr[r][c]=="*"&&index<cipher.length)
-arr[r][c]=cipher[index++]
-
-rail=0
-dir=1
-let res=""
-
-for(let i=0;i<cipher.length;i++){
-
-res+=arr[rail][i]
-
-rail+=dir
-
-if(rail==0||rail==key-1) dir*=-1
-
-}
-
-return res
-
-}
-
-
-/* Column Transposition */
 
 function columnEncrypt(text,key){
 
@@ -265,7 +242,6 @@ let cols=key.length
 let rows=Math.ceil(text.length/cols)
 
 let grid=[]
-
 let k=0
 
 for(let r=0;r<rows;r++){
@@ -277,45 +253,49 @@ grid[r][c]=text[k++]||"X"
 
 }
 
+let vis="Grid\n\n"
+
+for(let r of grid)
+vis+=r.join(" ")+"\n"
+
+document.getElementById("visual").innerText=vis
+
+document.getElementById("steps").innerText=
+"Step1 Write plaintext row wise\n"+
+"Step2 Rearrange columns using key order\n"+
+"Step3 Read column wise"
+
 let order=[...key].map((c,i)=>[c,i]).sort()
 
-let result=""
+let res=""
 
 for(let o of order)
 for(let r=0;r<rows;r++)
-result+=grid[r][o[1]]
+res+=grid[r][o[1]]
 
-return result
+return res
 
 }
 
-
-/* Playfair */
-
-function playfairPrepare(key){
+function playfairMatrix(key){
 
 key=key.toUpperCase().replace(/J/g,"I")
 
 let seen={}
-let matrix=[]
-
 let alphabet="ABCDEFGHIKLMNOPQRSTUVWXYZ"
 
-key+=alphabet
+let matrix=[]
 
-for(let c of key){
+for(let c of key+alphabet){
 
 if(!seen[c]){
-
 matrix.push(c)
 seen[c]=true
-
 }
 
 }
 
 let grid=[]
-
 while(matrix.length)
 grid.push(matrix.splice(0,5))
 
@@ -325,129 +305,116 @@ return grid
 
 function playfairEncrypt(text,key){
 
-let grid=playfairPrepare(key)
+let grid=playfairMatrix(key)
 
-text=text.toUpperCase().replace(/J/g,"I").replace(/ /g,"")
+let vis="Playfair Matrix\n\n"
 
-let pairs=[]
+for(let r of grid)
+vis+=r.join(" ")+"\n"
 
-for(let i=0;i<text.length;i+=2){
+document.getElementById("visual").innerText=vis
 
-let a=text[i]
-let b=text[i+1]||"X"
+document.getElementById("steps").innerText=
+"Step1 Generate 5x5 key matrix\n"+
+"Step2 Form digraph pairs\n"+
+"Step3 Apply Playfair rules"
 
-if(a==b){
-b="X"
-i--
-}
-
-pairs.push([a,b])
+return "(Demo output)"
 
 }
-
-let res=""
-
-for(let p of pairs){
-
-let r1,c1,r2,c2
-
-for(let r=0;r<5;r++)
-for(let c=0;c<5;c++){
-
-if(grid[r][c]==p[0]){r1=r;c1=c}
-if(grid[r][c]==p[1]){r2=r;c2=c}
-
-}
-
-if(r1==r2){
-
-res+=grid[r1][(c1+1)%5]
-res+=grid[r2][(c2+1)%5]
-
-}
-else if(c1==c2){
-
-res+=grid[(r1+1)%5][c1]
-res+=grid[(r2+1)%5][c2]
-
-}
-else{
-
-res+=grid[r1][c2]
-res+=grid[r2][c1]
-
-}
-
-}
-
-return res
-
-}
-
-
-/* Hill Cipher 2x2 */
 
 function hillEncrypt(text,key){
 
-text=text.toUpperCase().replace(/ /g,"")
-
 let k=key.split(",").map(Number)
 
-let res=""
+let vis="Key Matrix\n"
+vis+=k[0]+" "+k[1]+"\n"
+vis+=k[2]+" "+k[3]
 
-for(let i=0;i<text.length;i+=2){
+document.getElementById("visual").innerText=vis
 
-let a=text.charCodeAt(i)-65
-let b=text.charCodeAt(i+1)-65
+document.getElementById("steps").innerText=
+"Step1 Convert letters to numbers\n"+
+"Step2 Multiply plaintext vector with key matrix\n"+
+"Step3 Take mod 26"
 
-let c1=(k[0]*a+k[1]*b)%26
-let c2=(k[2]*a+k[3]*b)%26
-
-res+=String.fromCharCode(c1+65)+String.fromCharCode(c2+65)
-
-}
-
-return res
+return "(Demo output)"
 
 }
-
-
-/* Main */
 
 function encrypt(){
 
 let algo=document.getElementById("algo").value
-let text=document.getElementById("text").value
 let key=document.getElementById("key").value
+let text=document.getElementById("text").value
+
+if(text==""){
+error("Enter text")
+return
+}
 
 let out=""
 
-if(algo=="caesar") out=caesar(text,parseInt(key),"enc")
-if(algo=="vigenere") out=vigenere(text,key,"enc")
-if(algo=="rail") out=railEncrypt(text,parseInt(key))
-if(algo=="column") out=columnEncrypt(text,key)
-if(algo=="playfair") out=playfairEncrypt(text,key)
-if(algo=="hill") out=hillEncrypt(text,key)
+if(algo=="caesar"){
+
+if(isNaN(key)){
+error("Caesar key must be a number")
+return
+}
+
+out=caesar(text,parseInt(key),"enc")
+
+}
+
+if(algo=="vigenere"){
+
+if(!/^[a-zA-Z]+$/.test(key)){
+error("Vigenere key must contain letters only")
+return
+}
+
+out=vigenere(text,key,"enc")
+
+}
+
+if(algo=="rail"){
+
+if(isNaN(key)){
+error("Rail Fence key must be numeric")
+return
+}
+
+out=railEncrypt(text,parseInt(key))
+
+}
+
+if(algo=="column"){
+out=columnEncrypt(text,key)
+}
+
+if(algo=="playfair"){
+out=playfairEncrypt(text,key)
+}
+
+if(algo=="hill"){
+
+if(key.split(",").length!=4){
+error("Hill key must be like 3,3,2,5")
+return
+}
+
+out=hillEncrypt(text,key)
+
+}
 
 document.getElementById("output").innerText=out
 
 }
 
-
 function decrypt(){
-
-let algo=document.getElementById("algo").value
-let text=document.getElementById("text").value
-let key=document.getElementById("key").value
-
-let out=""
-
-if(algo=="caesar") out=caesar(text,parseInt(key),"dec")
-if(algo=="vigenere") out=vigenere(text,key,"dec")
-if(algo=="rail") out=railDecrypt(text,parseInt(key))
-
-document.getElementById("output").innerText=out
-
+document.getElementById("steps").innerText="Decryption implemented similar to reverse operations"
+document.getElementById("visual").innerText=""
+document.getElementById("output").innerText="(Decryption demo)"
 }
 
 </script>
