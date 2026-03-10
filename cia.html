@@ -3,97 +3,162 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>CNS Cryptography Toolkit</title>
+<title>CNS Crypto Simulator</title>
 
 <style>
 
 body{
-font-family:Inter,sans-serif;
+margin:0;
+font-family:Inter, sans-serif;
 background:linear-gradient(135deg,#020617,#0f172a);
 color:#e2e8f0;
-margin:0;
-padding:40px 20px;
 }
 
 .wrapper{
-max-width:900px;
+max-width:1000px;
 margin:auto;
+padding:40px 20px;
 }
 
 h1{
 text-align:center;
+font-weight:600;
 color:#38bdf8;
-margin-bottom:30px;
+margin-bottom:40px;
+letter-spacing:1px;
 }
 
+/* glass panel */
+
+.card{
+background:rgba(15,23,42,0.6);
+backdrop-filter:blur(12px);
+border:1px solid rgba(148,163,184,0.15);
+border-radius:16px;
+padding:25px;
+box-shadow:0 10px 30px rgba(0,0,0,0.4);
+}
+
+/* layout */
+
+.grid{
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:20px;
+}
+
+.full{
+grid-column:1 / span 2;
+}
+
+/* inputs */
+
 label{
-display:block;
-margin-top:15px;
+font-size:13px;
 color:#94a3b8;
 }
 
 select,input,textarea{
 width:100%;
-padding:12px;
 margin-top:6px;
-border-radius:8px;
+padding:12px;
+border-radius:10px;
 border:1px solid #1e293b;
 background:#020617;
-color:white;
+color:#e2e8f0;
 }
 
 textarea{
 height:120px;
+resize:none;
 }
+
+/* buttons */
 
 .buttons{
 display:flex;
 gap:12px;
-margin-top:20px;
+margin-top:15px;
 }
 
 button{
 flex:1;
 padding:12px;
 border:none;
-border-radius:8px;
-background:#22d3ee;
+border-radius:10px;
+background:linear-gradient(135deg,#22d3ee,#06b6d4);
 color:#020617;
 font-weight:600;
 cursor:pointer;
+transition:0.2s;
 }
 
 button:hover{
 transform:translateY(-2px);
-box-shadow:0 6px 15px rgba(34,211,238,0.3);
+box-shadow:0 5px 15px rgba(34,211,238,0.3);
 }
 
+/* output sections */
+
 .section{
-margin-top:28px;
-padding:18px;
-border-radius:12px;
-background:rgba(15,23,42,0.7);
-border:1px solid rgba(148,163,184,0.2);
+margin-top:25px;
 }
 
 .panel{
 background:#020617;
 border:1px solid #1e293b;
-border-radius:8px;
-padding:14px;
+border-radius:12px;
+padding:16px;
 min-height:120px;
 white-space:pre-wrap;
+line-height:1.6;
 overflow:auto;
 }
 
+/* copy button */
+
 .copy{
 margin-top:10px;
-padding:8px 14px;
 background:#38bdf8;
-border:none;
-border-radius:6px;
-cursor:pointer;
 color:#020617;
+padding:8px 14px;
+border-radius:8px;
+border:none;
+cursor:pointer;
+}
+
+/* animation */
+
+.animate{
+animation:fade 0.5s ease;
+}
+
+@keyframes fade{
+from{opacity:0; transform:translateY(8px)}
+to{opacity:1; transform:translateY(0)}
+}
+
+/* matrix */
+
+.matrix{
+display:grid;
+grid-template-columns:repeat(2,40px);
+gap:8px;
+margin-top:10px;
+}
+
+.cell{
+background:#0f172a;
+border:1px solid #38bdf8;
+padding:8px;
+text-align:center;
+border-radius:6px;
+}
+
+.helper{
+font-size:12px;
+color:#64748b;
+margin-top:4px;
 }
 
 .error{
@@ -107,62 +172,100 @@ color:#f87171;
 
 <div class="wrapper">
 
-<h1>CNS Cryptography Toolkit</h1>
+<h1>CNS Cryptography Simulator</h1>
 
+<div class="card">
+
+<div class="grid">
+
+<div>
 <label>Algorithm</label>
-<select id="algo">
+<select id="algo" onchange="updateHint()">
 <option value="caesar">Caesar Cipher</option>
-<option value="vigenere">Vigenere Cipher</option>
+<option value="vigenere">Vigenère Cipher</option>
 <option value="playfair">Playfair Cipher</option>
-<option value="hill">Hill Cipher (2x2)</option>
+<option value="hill">Hill Cipher</option>
 <option value="rail">Rail Fence Cipher</option>
 <option value="column">Row/Column Transposition</option>
 </select>
+</div>
 
+<div>
 <label>Key</label>
-<input id="key" placeholder="Enter key">
+<input id="key">
+<div class="helper" id="hint"></div>
+</div>
 
+<div class="full">
 <label>Input Text</label>
 <textarea id="text"></textarea>
+</div>
 
-<div class="buttons">
+<div class="buttons full">
 <button onclick="encrypt()">Encrypt</button>
 <button onclick="decrypt()">Decrypt</button>
 </div>
 
-<div class="section">
+</div>
+
+</div>
+
+<div class="section card">
 <h3>Output</h3>
-<div class="panel" id="output"></div>
+<div id="output" class="panel"></div>
 <button class="copy" onclick="copyOutput()">Copy Output</button>
 </div>
 
-<div class="section">
+<div class="section card">
 <h3>Visualization</h3>
-<div class="panel" id="visual"></div>
+<div id="visual" class="panel"></div>
 </div>
 
-<div class="section">
+<div class="section card">
 <h3>Steps</h3>
-<div class="panel" id="steps"></div>
+<div id="steps" class="panel"></div>
 </div>
 
 </div>
 
 <script>
 
-/* utility */
-
-function error(msg){
-document.getElementById("output").innerHTML="<span class='error'>"+msg+"</span>"
-}
+/* helpers */
 
 function copyOutput(){
 navigator.clipboard.writeText(document.getElementById("output").innerText)
 }
 
+function showVisual(html){
+let v=document.getElementById("visual")
+v.innerHTML=html
+v.classList.remove("animate")
+void v.offsetWidth
+v.classList.add("animate")
+}
+
+/* key hints */
+
+function updateHint(){
+
+let algo=document.getElementById("algo").value
+let hint=""
+
+if(algo=="caesar") hint="Enter number shift (example: 3)"
+if(algo=="vigenere") hint="Alphabet key (example: KEY)"
+if(algo=="playfair") hint="Keyword (example: MONARCHY)"
+if(algo=="hill") hint="4 numbers separated by commas (example: 3,3,2,5)"
+if(algo=="rail") hint="Number of rails (example: 3)"
+if(algo=="column") hint="Keyword (example: ZEBRA)"
+
+document.getElementById("hint").innerText=hint
+}
+
+updateHint()
+
 /* Caesar */
 
-function caesar(text,key,mode){
+function caesar(text,k,mode){
 
 let res=""
 let vis=""
@@ -175,25 +278,23 @@ let base=c==c.toUpperCase()?65:97
 let p=c.charCodeAt(0)-base
 let r
 
-if(mode=="enc") r=(p+key)%26
-else r=(p-key+26)%26
+if(mode=="enc") r=(p+k)%26
+else r=(p-k+26)%26
 
 res+=String.fromCharCode(r+base)
 
-vis+=c+" → "+String.fromCharCode(r+base)+"\n"
-
+vis+=c+" → "+String.fromCharCode(r+base)+"<br>"
 }
 else res+=c
+
 }
 
-document.getElementById("visual").innerText=vis
+showVisual(vis)
 
 document.getElementById("steps").innerText=
-"Formula: C = (P + k) mod 26\n"+
-"Decryption: P = (C - k) mod 26"
+"C = (P + k) mod 26\nP = (C - k) mod 26"
 
 return res
-
 }
 
 /* Vigenere */
@@ -225,44 +326,37 @@ else r=(p-k+26)%26
 
 res+=String.fromCharCode(r+65)
 
-vis+=c+" + "+key[i%key.length]+" → "+String.fromCharCode(r+65)+"\n"
-
+vis+=c+" + "+key[i%key.length]+" → "+String.fromCharCode(r+65)+"<br>"
 }
 
-document.getElementById("visual").innerText=vis
+showVisual(vis)
 
 document.getElementById("steps").innerText=
-"Ci = (Pi + Ki) mod 26\n"+
-"Pi = (Ci - Ki) mod 26"
+"Ci = (Pi + Ki) mod 26\nPi = (Ci - Ki) mod 26"
 
 return res
-
 }
 
 /* Rail Fence */
 
 function railEncrypt(text,key){
 
+let rails=Array.from({length:key},()=>[])
 let rail=0
 let dir=1
-let rails=Array.from({length:key},()=>[])
 
 for(let c of text){
-
 rails[rail].push(c)
-
 rail+=dir
 if(rail==0||rail==key-1) dir*=-1
-
 }
 
 let vis=""
-for(let r of rails) vis+=r.join(" ")+"\n"
+for(let r of rails) vis+=r.join(" ")+"<br>"
 
-document.getElementById("visual").innerText=vis
+showVisual(vis)
 
 return rails.flat().join("")
-
 }
 
 function railDecrypt(cipher,key){
@@ -279,23 +373,19 @@ if(rail==0||rail==key-1) dir*=-1
 let rails=Array.from({length:key},()=>[])
 let index=0
 
-for(let r=0;r<key;r++){
-for(let i=0;i<pattern.length;i++){
+for(let r=0;r<key;r++)
+for(let i=0;i<pattern.length;i++)
 if(pattern[i]==r) rails[r].push(cipher[index++])
-}
-}
 
-let result=""
-let railIndex=Array(key).fill(0)
+let res=""
+let pos=Array(key).fill(0)
 
-for(let p of pattern){
-result+=rails[p][railIndex[p]++]
-}
+for(let p of pattern)
+res+=rails[p][pos[p]++]
 
-document.getElementById("visual").innerText="Zigzag pattern reconstructed"
+showVisual("Rail pattern reconstructed")
 
-return result
-
+return res
 }
 
 /* Column Transposition */
@@ -318,18 +408,16 @@ let order=[...key].map((c,i)=>[c,i]).sort()
 
 let res=""
 
-for(let o of order){
+for(let o of order)
 for(let r=0;r<rows;r++)
 res+=grid[r][o[1]]
-}
 
 let vis=""
-for(let r of grid) vis+=r.join(" ")+"\n"
+for(let r of grid) vis+=r.join(" ")+"<br>"
 
-document.getElementById("visual").innerText=vis
+showVisual(vis)
 
 return res
-
 }
 
 function columnDecrypt(cipher,key){
@@ -338,27 +426,22 @@ let cols=key.length
 let rows=Math.ceil(cipher.length/cols)
 
 let grid=Array.from({length:rows},()=>Array(cols))
-
 let order=[...key].map((c,i)=>[c,i]).sort()
 
 let index=0
 
-for(let o of order){
-for(let r=0;r<rows;r++){
+for(let o of order)
+for(let r=0;r<rows;r++)
 grid[r][o[1]]=cipher[index++]
-}
-}
 
 let res=""
-
 for(let r=0;r<rows;r++)
 for(let c=0;c<cols;c++)
 res+=grid[r][c]
 
-document.getElementById("visual").innerText="Column grid reconstructed"
+showVisual("Column grid reconstructed")
 
 return res
-
 }
 
 /* Playfair */
@@ -382,7 +465,6 @@ let grid=[]
 while(matrix.length) grid.push(matrix.splice(0,5))
 
 return grid
-
 }
 
 function findPos(grid,c){
@@ -394,6 +476,7 @@ if(grid[r][c2]==c) return [r,c2]
 function playfair(text,key,mode){
 
 let grid=playfairMatrix(key)
+
 text=text.toUpperCase().replace(/J/g,"I").replace(/ /g,"")
 
 let pairs=[]
@@ -403,13 +486,9 @@ for(let i=0;i<text.length;i+=2){
 let a=text[i]
 let b=text[i+1]||"X"
 
-if(a==b){
-b="X"
-i--
-}
+if(a==b){ b="X"; i-- }
 
 pairs.push([a,b])
-
 }
 
 let res=""
@@ -454,29 +533,23 @@ res+=grid[r2][c1]
 
 }
 
-document.getElementById("visual").innerText="5x5 key matrix generated"
+showVisual("Playfair 5×5 key matrix used")
 
 return res
-
 }
 
 /* Hill Cipher */
 
 function modInv(a,m){
-
 a=(a%m+m)%m
-
 for(let x=1;x<m;x++)
 if((a*x)%m==1) return x
-
 return 1
-
 }
 
 function hillEncrypt(text,key){
 
 let k=key.split(",").map(Number)
-
 text=text.toUpperCase().replace(/ /g,"")
 
 let res=""
@@ -493,10 +566,18 @@ res+=String.fromCharCode(c1+65)+String.fromCharCode(c2+65)
 
 }
 
-document.getElementById("visual").innerText="Matrix multiplication applied"
+let vis=`
+<div class="matrix">
+<div class="cell">${k[0]}</div>
+<div class="cell">${k[1]}</div>
+<div class="cell">${k[2]}</div>
+<div class="cell">${k[3]}</div>
+</div>
+`
+
+showVisual(vis)
 
 return res
-
 }
 
 function hillDecrypt(text,key){
@@ -527,13 +608,12 @@ res+=String.fromCharCode(p1+65)+String.fromCharCode(p2+65)
 
 }
 
-document.getElementById("visual").innerText="Inverse matrix applied"
+showVisual("Inverse matrix applied")
 
 return res
-
 }
 
-/* Controller */
+/* controller */
 
 function encrypt(){
 
@@ -545,13 +625,12 @@ let out=""
 
 if(algo=="caesar") out=caesar(text,parseInt(key),"enc")
 if(algo=="vigenere") out=vigenere(text,key,"enc")
-if(algo=="rail") out=railEncrypt(text,parseInt(key))
-if(algo=="column") out=columnEncrypt(text,key)
 if(algo=="playfair") out=playfair(text,key,"enc")
 if(algo=="hill") out=hillEncrypt(text,key)
+if(algo=="rail") out=railEncrypt(text,parseInt(key))
+if(algo=="column") out=columnEncrypt(text,key)
 
 document.getElementById("output").innerText=out
-
 }
 
 function decrypt(){
@@ -564,13 +643,12 @@ let out=""
 
 if(algo=="caesar") out=caesar(text,parseInt(key),"dec")
 if(algo=="vigenere") out=vigenere(text,key,"dec")
-if(algo=="rail") out=railDecrypt(text,parseInt(key))
-if(algo=="column") out=columnDecrypt(text,key)
 if(algo=="playfair") out=playfair(text,key,"dec")
 if(algo=="hill") out=hillDecrypt(text,key)
+if(algo=="rail") out=railDecrypt(text,parseInt(key))
+if(algo=="column") out=columnDecrypt(text,key)
 
 document.getElementById("output").innerText=out
-
 }
 
 </script>
