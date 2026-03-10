@@ -1,0 +1,327 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>CNS Crypto Lab Toolkit</title>
+
+<style>
+
+body{
+font-family: Arial;
+background:#0f172a;
+color:white;
+display:flex;
+justify-content:center;
+align-items:center;
+height:100vh;
+}
+
+.container{
+background:#1e293b;
+padding:30px;
+border-radius:12px;
+width:600px;
+box-shadow:0 10px 25px rgba(0,0,0,0.5);
+}
+
+h1{
+text-align:center;
+margin-bottom:20px;
+}
+
+select,input,textarea,button{
+width:100%;
+margin-top:10px;
+padding:10px;
+border-radius:8px;
+border:none;
+font-size:14px;
+}
+
+textarea{
+height:100px;
+resize:none;
+}
+
+button{
+background:#3b82f6;
+color:white;
+cursor:pointer;
+margin-top:10px;
+}
+
+button:hover{
+background:#2563eb;
+}
+
+.result{
+margin-top:15px;
+background:#020617;
+padding:10px;
+border-radius:6px;
+word-wrap:break-word;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>CNS Crypto Toolkit</h1>
+
+<label>Select Algorithm</label>
+<select id="algorithm">
+<option value="caesar">Caesar Cipher</option>
+<option value="vigenere">Vigenere Cipher</option>
+<option value="rail">Rail Fence Cipher</option>
+<option value="row">Row Column Transposition</option>
+<option value="aes">AES</option>
+</select>
+
+<label>Key / Shift</label>
+<input id="key" placeholder="Enter key or shift">
+
+<label>Input Text</label>
+<textarea id="inputText"></textarea>
+
+<button onclick="encrypt()">Encrypt</button>
+<button onclick="decrypt()">Decrypt</button>
+
+<div class="result" id="output"></div>
+
+</div>
+
+<script>
+
+function caesarEncrypt(text,shift){
+
+let result="";
+
+for(let i=0;i<text.length;i++){
+
+let char=text.charCodeAt(i);
+
+if(char>=65 && char<=90){
+result+=String.fromCharCode((char-65+shift)%26+65);
+}
+else if(char>=97 && char<=122){
+result+=String.fromCharCode((char-97+shift)%26+97);
+}
+else{
+result+=text[i];
+}
+
+}
+
+return result;
+
+}
+
+function caesarDecrypt(text,shift){
+return caesarEncrypt(text,26-shift);
+}
+
+
+function vigenereEncrypt(text,key){
+
+key=key.toLowerCase();
+
+let result="";
+let j=0;
+
+for(let i=0;i<text.length;i++){
+
+let c=text[i];
+
+if(/[a-z]/i.test(c)){
+
+let shift=key.charCodeAt(j%key.length)-97;
+
+let base=c===c.toUpperCase()?65:97;
+
+result+=String.fromCharCode((c.charCodeAt(0)-base+shift)%26+base);
+
+j++;
+
+}else{
+result+=c;
+}
+
+}
+
+return result;
+
+}
+
+
+function vigenereDecrypt(text,key){
+
+key=key.toLowerCase();
+
+let result="";
+let j=0;
+
+for(let i=0;i<text.length;i++){
+
+let c=text[i];
+
+if(/[a-z]/i.test(c)){
+
+let shift=key.charCodeAt(j%key.length)-97;
+
+let base=c===c.toUpperCase()?65:97;
+
+result+=String.fromCharCode((c.charCodeAt(0)-base-shift+26)%26+base);
+
+j++;
+
+}else{
+result+=c;
+}
+
+}
+
+return result;
+
+}
+
+
+
+function railEncrypt(text,rails){
+
+let fence=[];
+for(let i=0;i<rails;i++) fence[i]=[];
+
+let rail=0;
+let dir=1;
+
+for(let char of text){
+
+fence[rail].push(char);
+
+rail+=dir;
+
+if(rail==rails-1 || rail==0) dir*=-1;
+
+}
+
+return fence.flat().join("");
+
+}
+
+
+function railDecrypt(cipher,rails){
+
+let fence=Array.from({length:rails},()=>Array(cipher.length).fill(null));
+
+let rail=0;
+let dir=1;
+
+for(let i=0;i<cipher.length;i++){
+
+fence[rail][i]="*";
+
+rail+=dir;
+
+if(rail==rails-1 || rail==0) dir*=-1;
+
+}
+
+let index=0;
+
+for(let r=0;r<rails;r++){
+
+for(let c=0;c<cipher.length;c++){
+
+if(fence[r][c]=="*" && index<cipher.length){
+fence[r][c]=cipher[index++];
+}
+
+}
+
+}
+
+let result="";
+
+rail=0;
+dir=1;
+
+for(let i=0;i<cipher.length;i++){
+
+result+=fence[rail][i];
+
+rail+=dir;
+
+if(rail==rails-1 || rail==0) dir*=-1;
+
+}
+
+return result;
+
+}
+
+
+
+function encrypt(){
+
+let algo=document.getElementById("algorithm").value;
+
+let text=document.getElementById("inputText").value;
+
+let key=document.getElementById("key").value;
+
+let output="";
+
+if(algo==="caesar"){
+output=caesarEncrypt(text,parseInt(key));
+}
+
+if(algo==="vigenere"){
+output=vigenereEncrypt(text,key);
+}
+
+if(algo==="rail"){
+output=railEncrypt(text,parseInt(key));
+}
+
+document.getElementById("output").innerText=output;
+
+}
+
+
+
+function decrypt(){
+
+let algo=document.getElementById("algorithm").value;
+
+let text=document.getElementById("inputText").value;
+
+let key=document.getElementById("key").value;
+
+let output="";
+
+if(algo==="caesar"){
+output=caesarDecrypt(text,parseInt(key));
+}
+
+if(algo==="vigenere"){
+output=vigenereDecrypt(text,key);
+}
+
+if(algo==="rail"){
+output=railDecrypt(text,parseInt(key));
+}
+
+document.getElementById("output").innerText=output;
+
+}
+
+</script>
+
+</body>
+</html>
+```
+
