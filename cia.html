@@ -3,80 +3,114 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>CNS Cryptography Simulator</title>
+<title>CNS</title>
 
 <style>
 
 body{
-font-family:Arial;
-background:#020617;
-color:white;
-display:flex;
-justify-content:center;
-padding:40px;
+font-family:Inter, sans-serif;
+background: radial-gradient(circle at top,#0f172a,#020617);
+color:#e2e8f0;
+margin:0;
+padding:40px 20px;
 }
 
-.container{
-width:750px;
-background:#0f172a;
-padding:30px;
-border-radius:12px;
-box-shadow:0 0 30px rgba(0,255,255,0.2);
+.wrapper{
+max-width:850px;
+margin:auto;
 }
 
 h1{
 text-align:center;
-color:#22d3ee;
+color:#38bdf8;
+margin-bottom:30px;
 }
 
 label{
-margin-top:10px;
 display:block;
+margin-top:15px;
+font-size:14px;
 color:#94a3b8;
 }
 
 select,input,textarea{
 width:100%;
-padding:10px;
-margin-top:5px;
-border-radius:6px;
+padding:12px;
+margin-top:6px;
+border-radius:8px;
 border:1px solid #1e293b;
 background:#020617;
-color:white;
+color:#e2e8f0;
+font-size:14px;
 }
 
 textarea{
-height:100px;
+height:120px;
+resize:none;
 }
 
 .buttons{
 display:flex;
-gap:10px;
-margin-top:15px;
+gap:12px;
+margin-top:20px;
 }
 
 button{
 flex:1;
-padding:10px;
+padding:12px;
+border-radius:8px;
 border:none;
-background:#22d3ee;
-color:black;
-font-weight:bold;
-border-radius:6px;
+background:linear-gradient(135deg,#22d3ee,#06b6d4);
+color:#020617;
+font-weight:600;
 cursor:pointer;
 }
 
 button:hover{
-background:#06b6d4;
+transform:translateY(-2px);
+box-shadow:0 6px 15px rgba(34,211,238,0.3);
+}
+
+.flow{
+text-align:center;
+margin-top:15px;
+color:#38bdf8;
+}
+
+.section{
+margin-top:28px;
+padding:18px;
+border-radius:12px;
+background:rgba(15,23,42,0.6);
+border:1px solid rgba(148,163,184,0.15);
+backdrop-filter:blur(8px);
+}
+
+.section h3{
+margin-top:0;
+color:#38bdf8;
 }
 
 .panel{
-margin-top:20px;
 background:#020617;
-padding:15px;
-border-radius:8px;
 border:1px solid #1e293b;
+border-radius:8px;
+padding:14px;
+min-height:120px;
 white-space:pre-wrap;
+line-height:1.6;
+overflow:auto;
+}
+
+.copy{
+margin-top:10px;
+padding:8px 14px;
+background:#38bdf8;
+border:none;
+border-radius:6px;
+cursor:pointer;
+color:#020617;
+font-weight:600;
 }
 
 .error{
@@ -88,9 +122,9 @@ color:#f87171;
 
 <body>
 
-<div class="container">
+<div class="wrapper">
 
-<h1>CNS Cryptography Simulator</h1>
+<h1>CNS Cryptography Visualizer</h1>
 
 <label>Algorithm</label>
 <select id="algo">
@@ -113,13 +147,25 @@ color:#f87171;
 <button onclick="decrypt()">Decrypt</button>
 </div>
 
-<div class="panel" id="output"></div>
+<div class="flow">
+Plaintext → Encryption Algorithm → Ciphertext
+</div>
 
+<div class="section">
+<h3>Output</h3>
+<div class="panel" id="output"></div>
+<button class="copy" onclick="copyOutput()">Copy Output</button>
+</div>
+
+<div class="section">
 <h3>Visualization</h3>
 <div class="panel" id="visual"></div>
+</div>
 
+<div class="section">
 <h3>Steps</h3>
 <div class="panel" id="steps"></div>
+</div>
 
 </div>
 
@@ -130,6 +176,12 @@ document.getElementById("output").innerHTML="<span class='error'>"+msg+"</span>"
 document.getElementById("visual").innerText=""
 document.getElementById("steps").innerText=""
 }
+
+function copyOutput(){
+navigator.clipboard.writeText(document.getElementById("output").innerText)
+}
+
+/* Caesar */
 
 function caesar(text,shift,mode){
 
@@ -144,10 +196,8 @@ let base=c==c.toUpperCase()?65:97
 let p=c.charCodeAt(0)-base
 let r
 
-if(mode=="enc")
-r=(p+shift)%26
-else
-r=(p-shift+26)%26
+if(mode=="enc") r=(p+shift)%26
+else r=(p-shift+26)%26
 
 res+=String.fromCharCode(r+base)
 
@@ -161,13 +211,15 @@ else res+=c
 document.getElementById("visual").innerText=vis
 
 document.getElementById("steps").innerText=
-"Step1 Convert letters to numbers\n"+
-"Step2 Apply formula (P ± key) mod 26\n"+
-"Step3 Convert back to letters"
+"1 Convert letters to numbers\n"+
+"2 Apply (P ± key) mod 26\n"+
+"3 Convert numbers back"
 
 return res
 
 }
+
+/* Vigenere */
 
 function vigenere(text,key,mode){
 
@@ -179,15 +231,18 @@ let vis=""
 
 for(let i=0;i<text.length;i++){
 
+if(!/[A-Z]/.test(text[i])){
+res+=text[i]
+continue
+}
+
 let p=text.charCodeAt(i)-65
 let k=key.charCodeAt(i%key.length)-65
 
 let r
 
-if(mode=="enc")
-r=(p+k)%26
-else
-r=(p-k+26)%26
+if(mode=="enc") r=(p+k)%26
+else r=(p-k+26)%26
 
 res+=String.fromCharCode(r+65)
 
@@ -198,13 +253,13 @@ vis+=text[i]+" + "+key[i%key.length]+" → "+String.fromCharCode(r+65)+"\n"
 document.getElementById("visual").innerText=vis
 
 document.getElementById("steps").innerText=
-"Step1 Repeat key until plaintext length\n"+
-"Step2 Convert letters to numbers\n"+
-"Step3 Ci = (Pi + Ki) mod 26"
+"1 Repeat key\n2 Convert to numbers\n3 Apply formula"
 
 return res
 
 }
+
+/* Rail Fence */
 
 function railEncrypt(text,key){
 
@@ -215,6 +270,7 @@ let dir=1
 for(let c of text){
 
 rails[rail].push(c)
+
 rail+=dir
 
 if(rail==0||rail==key-1) dir*=-1
@@ -228,13 +284,55 @@ vis+=r.join(" ")+"\n"
 
 document.getElementById("visual").innerText=vis
 
-document.getElementById("steps").innerText=
-"Step1 Write text diagonally across rails\n"+
-"Step2 Read row by row"
-
 return rails.flat().join("")
 
 }
+
+function railDecrypt(cipher,key){
+
+let arr=Array.from({length:key},()=>Array(cipher.length).fill(null))
+
+let rail=0
+let dir=1
+
+for(let i=0;i<cipher.length;i++){
+
+arr[rail][i]="*"
+
+rail+=dir
+
+if(rail==0||rail==key-1) dir*=-1
+
+}
+
+let index=0
+
+for(let r=0;r<key;r++)
+for(let c=0;c<cipher.length;c++)
+if(arr[r][c]=="*" && index<cipher.length)
+arr[r][c]=cipher[index++]
+
+rail=0
+dir=1
+let res=""
+
+for(let i=0;i<cipher.length;i++){
+
+res+=arr[rail][i]
+
+rail+=dir
+
+if(rail==0||rail==key-1) dir*=-1
+
+}
+
+document.getElementById("visual").innerText="Rail structure reconstructed"
+
+return res
+
+}
+
+/* Column Transposition */
 
 function columnEncrypt(text,key){
 
@@ -260,11 +358,6 @@ vis+=r.join(" ")+"\n"
 
 document.getElementById("visual").innerText=vis
 
-document.getElementById("steps").innerText=
-"Step1 Write plaintext row wise\n"+
-"Step2 Rearrange columns using key order\n"+
-"Step3 Read column wise"
-
 let order=[...key].map((c,i)=>[c,i]).sort()
 
 let res=""
@@ -277,70 +370,34 @@ return res
 
 }
 
-function playfairMatrix(key){
+function columnDecrypt(cipher,key){
 
-key=key.toUpperCase().replace(/J/g,"I")
+let cols=key.length
+let rows=Math.ceil(cipher.length/cols)
 
-let seen={}
-let alphabet="ABCDEFGHIKLMNOPQRSTUVWXYZ"
+let grid=Array.from({length:rows},()=>Array(cols))
 
-let matrix=[]
+let order=[...key].map((c,i)=>[c,i]).sort()
 
-for(let c of key+alphabet){
+let index=0
 
-if(!seen[c]){
-matrix.push(c)
-seen[c]=true
-}
+for(let o of order)
+for(let r=0;r<rows;r++)
+grid[r][o[1]]=cipher[index++]||""
 
-}
+let res=""
 
-let grid=[]
-while(matrix.length)
-grid.push(matrix.splice(0,5))
+for(let r=0;r<rows;r++)
+for(let c=0;c<cols;c++)
+res+=grid[r][c]
 
-return grid
+document.getElementById("visual").innerText="Column grid reconstructed"
 
-}
-
-function playfairEncrypt(text,key){
-
-let grid=playfairMatrix(key)
-
-let vis="Playfair Matrix\n\n"
-
-for(let r of grid)
-vis+=r.join(" ")+"\n"
-
-document.getElementById("visual").innerText=vis
-
-document.getElementById("steps").innerText=
-"Step1 Generate 5x5 key matrix\n"+
-"Step2 Form digraph pairs\n"+
-"Step3 Apply Playfair rules"
-
-return "(Demo output)"
+return res
 
 }
 
-function hillEncrypt(text,key){
-
-let k=key.split(",").map(Number)
-
-let vis="Key Matrix\n"
-vis+=k[0]+" "+k[1]+"\n"
-vis+=k[2]+" "+k[3]
-
-document.getElementById("visual").innerText=vis
-
-document.getElementById("steps").innerText=
-"Step1 Convert letters to numbers\n"+
-"Step2 Multiply plaintext vector with key matrix\n"+
-"Step3 Take mod 26"
-
-return "(Demo output)"
-
-}
+/* Controller */
 
 function encrypt(){
 
@@ -348,63 +405,27 @@ let algo=document.getElementById("algo").value
 let key=document.getElementById("key").value
 let text=document.getElementById("text").value
 
-if(text==""){
-error("Enter text")
-return
-}
+if(text==""){ error("Enter input text"); return }
 
 let out=""
 
 if(algo=="caesar"){
-
-if(isNaN(key)){
-error("Caesar key must be a number")
-return
-}
-
+if(isNaN(key)){ error("Key must be number"); return }
 out=caesar(text,parseInt(key),"enc")
-
 }
 
 if(algo=="vigenere"){
-
-if(!/^[a-zA-Z]+$/.test(key)){
-error("Vigenere key must contain letters only")
-return
-}
-
+if(!/^[a-zA-Z]+$/.test(key)){ error("Key must be letters"); return }
 out=vigenere(text,key,"enc")
-
 }
 
 if(algo=="rail"){
-
-if(isNaN(key)){
-error("Rail Fence key must be numeric")
-return
-}
-
+if(isNaN(key)){ error("Key must be numeric"); return }
 out=railEncrypt(text,parseInt(key))
-
 }
 
 if(algo=="column"){
 out=columnEncrypt(text,key)
-}
-
-if(algo=="playfair"){
-out=playfairEncrypt(text,key)
-}
-
-if(algo=="hill"){
-
-if(key.split(",").length!=4){
-error("Hill key must be like 3,3,2,5")
-return
-}
-
-out=hillEncrypt(text,key)
-
 }
 
 document.getElementById("output").innerText=out
@@ -412,9 +433,20 @@ document.getElementById("output").innerText=out
 }
 
 function decrypt(){
-document.getElementById("steps").innerText="Decryption implemented similar to reverse operations"
-document.getElementById("visual").innerText=""
-document.getElementById("output").innerText="(Decryption demo)"
+
+let algo=document.getElementById("algo").value
+let key=document.getElementById("key").value
+let text=document.getElementById("text").value
+
+let out=""
+
+if(algo=="caesar") out=caesar(text,parseInt(key),"dec")
+if(algo=="vigenere") out=vigenere(text,key,"dec")
+if(algo=="rail") out=railDecrypt(text,parseInt(key))
+if(algo=="column") out=columnDecrypt(text,key)
+
+document.getElementById("output").innerText=out
+
 }
 
 </script>
