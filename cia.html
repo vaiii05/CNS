@@ -3,20 +3,20 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>CNS</title>
+<title>CNS Cryptography Toolkit</title>
 
 <style>
 
 body{
-font-family:Inter, sans-serif;
-background: radial-gradient(circle at top,#0f172a,#020617);
+font-family:Inter,sans-serif;
+background:linear-gradient(135deg,#020617,#0f172a);
 color:#e2e8f0;
 margin:0;
 padding:40px 20px;
 }
 
 .wrapper{
-max-width:850px;
+max-width:900px;
 margin:auto;
 }
 
@@ -29,7 +29,6 @@ margin-bottom:30px;
 label{
 display:block;
 margin-top:15px;
-font-size:14px;
 color:#94a3b8;
 }
 
@@ -40,13 +39,11 @@ margin-top:6px;
 border-radius:8px;
 border:1px solid #1e293b;
 background:#020617;
-color:#e2e8f0;
-font-size:14px;
+color:white;
 }
 
 textarea{
 height:120px;
-resize:none;
 }
 
 .buttons{
@@ -58,9 +55,9 @@ margin-top:20px;
 button{
 flex:1;
 padding:12px;
-border-radius:8px;
 border:none;
-background:linear-gradient(135deg,#22d3ee,#06b6d4);
+border-radius:8px;
+background:#22d3ee;
 color:#020617;
 font-weight:600;
 cursor:pointer;
@@ -71,24 +68,12 @@ transform:translateY(-2px);
 box-shadow:0 6px 15px rgba(34,211,238,0.3);
 }
 
-.flow{
-text-align:center;
-margin-top:15px;
-color:#38bdf8;
-}
-
 .section{
 margin-top:28px;
 padding:18px;
 border-radius:12px;
-background:rgba(15,23,42,0.6);
-border:1px solid rgba(148,163,184,0.15);
-backdrop-filter:blur(8px);
-}
-
-.section h3{
-margin-top:0;
-color:#38bdf8;
+background:rgba(15,23,42,0.7);
+border:1px solid rgba(148,163,184,0.2);
 }
 
 .panel{
@@ -98,7 +83,6 @@ border-radius:8px;
 padding:14px;
 min-height:120px;
 white-space:pre-wrap;
-line-height:1.6;
 overflow:auto;
 }
 
@@ -110,7 +94,6 @@ border:none;
 border-radius:6px;
 cursor:pointer;
 color:#020617;
-font-weight:600;
 }
 
 .error{
@@ -124,7 +107,7 @@ color:#f87171;
 
 <div class="wrapper">
 
-<h1>CNS Cryptography Visualizer</h1>
+<h1>CNS Cryptography Toolkit</h1>
 
 <label>Algorithm</label>
 <select id="algo">
@@ -147,10 +130,6 @@ color:#f87171;
 <button onclick="decrypt()">Decrypt</button>
 </div>
 
-<div class="flow">
-Plaintext → Encryption Algorithm → Ciphertext
-</div>
-
 <div class="section">
 <h3>Output</h3>
 <div class="panel" id="output"></div>
@@ -171,10 +150,10 @@ Plaintext → Encryption Algorithm → Ciphertext
 
 <script>
 
+/* utility */
+
 function error(msg){
 document.getElementById("output").innerHTML="<span class='error'>"+msg+"</span>"
-document.getElementById("visual").innerText=""
-document.getElementById("steps").innerText=""
 }
 
 function copyOutput(){
@@ -183,7 +162,7 @@ navigator.clipboard.writeText(document.getElementById("output").innerText)
 
 /* Caesar */
 
-function caesar(text,shift,mode){
+function caesar(text,key,mode){
 
 let res=""
 let vis=""
@@ -196,24 +175,22 @@ let base=c==c.toUpperCase()?65:97
 let p=c.charCodeAt(0)-base
 let r
 
-if(mode=="enc") r=(p+shift)%26
-else r=(p-shift+26)%26
+if(mode=="enc") r=(p+key)%26
+else r=(p-key+26)%26
 
 res+=String.fromCharCode(r+base)
 
-vis+=c+"("+p+") → "+r+" → "+String.fromCharCode(r+base)+"\n"
+vis+=c+" → "+String.fromCharCode(r+base)+"\n"
 
 }
 else res+=c
-
 }
 
 document.getElementById("visual").innerText=vis
 
 document.getElementById("steps").innerText=
-"1 Convert letters to numbers\n"+
-"2 Apply (P ± key) mod 26\n"+
-"3 Convert numbers back"
+"Formula: C = (P + k) mod 26\n"+
+"Decryption: P = (C - k) mod 26"
 
 return res
 
@@ -231,12 +208,14 @@ let vis=""
 
 for(let i=0;i<text.length;i++){
 
-if(!/[A-Z]/.test(text[i])){
-res+=text[i]
+let c=text[i]
+
+if(!/[A-Z]/.test(c)){
+res+=c
 continue
 }
 
-let p=text.charCodeAt(i)-65
+let p=c.charCodeAt(0)-65
 let k=key.charCodeAt(i%key.length)-65
 
 let r
@@ -246,14 +225,15 @@ else r=(p-k+26)%26
 
 res+=String.fromCharCode(r+65)
 
-vis+=text[i]+" + "+key[i%key.length]+" → "+String.fromCharCode(r+65)+"\n"
+vis+=c+" + "+key[i%key.length]+" → "+String.fromCharCode(r+65)+"\n"
 
 }
 
 document.getElementById("visual").innerText=vis
 
 document.getElementById("steps").innerText=
-"1 Repeat key\n2 Convert to numbers\n3 Apply formula"
+"Ci = (Pi + Ki) mod 26\n"+
+"Pi = (Ci - Ki) mod 26"
 
 return res
 
@@ -263,24 +243,21 @@ return res
 
 function railEncrypt(text,key){
 
-let rails=Array.from({length:key},()=>[])
 let rail=0
 let dir=1
+let rails=Array.from({length:key},()=>[])
 
 for(let c of text){
 
 rails[rail].push(c)
 
 rail+=dir
-
 if(rail==0||rail==key-1) dir*=-1
 
 }
 
 let vis=""
-
-for(let r of rails)
-vis+=r.join(" ")+"\n"
+for(let r of rails) vis+=r.join(" ")+"\n"
 
 document.getElementById("visual").innerText=vis
 
@@ -290,45 +267,34 @@ return rails.flat().join("")
 
 function railDecrypt(cipher,key){
 
-let arr=Array.from({length:key},()=>Array(cipher.length).fill(null))
-
-let rail=0
-let dir=1
+let pattern=[]
+let rail=0,dir=1
 
 for(let i=0;i<cipher.length;i++){
-
-arr[rail][i]="*"
-
+pattern.push(rail)
 rail+=dir
-
 if(rail==0||rail==key-1) dir*=-1
-
 }
 
+let rails=Array.from({length:key},()=>[])
 let index=0
 
-for(let r=0;r<key;r++)
-for(let c=0;c<cipher.length;c++)
-if(arr[r][c]=="*" && index<cipher.length)
-arr[r][c]=cipher[index++]
-
-rail=0
-dir=1
-let res=""
-
-for(let i=0;i<cipher.length;i++){
-
-res+=arr[rail][i]
-
-rail+=dir
-
-if(rail==0||rail==key-1) dir*=-1
-
+for(let r=0;r<key;r++){
+for(let i=0;i<pattern.length;i++){
+if(pattern[i]==r) rails[r].push(cipher[index++])
+}
 }
 
-document.getElementById("visual").innerText="Rail structure reconstructed"
+let result=""
+let railIndex=Array(key).fill(0)
 
-return res
+for(let p of pattern){
+result+=rails[p][railIndex[p]++]
+}
+
+document.getElementById("visual").innerText="Zigzag pattern reconstructed"
+
+return result
 
 }
 
@@ -343,28 +309,24 @@ let grid=[]
 let k=0
 
 for(let r=0;r<rows;r++){
-
 grid[r]=[]
-
 for(let c=0;c<cols;c++)
 grid[r][c]=text[k++]||"X"
-
 }
-
-let vis="Grid\n\n"
-
-for(let r of grid)
-vis+=r.join(" ")+"\n"
-
-document.getElementById("visual").innerText=vis
 
 let order=[...key].map((c,i)=>[c,i]).sort()
 
 let res=""
 
-for(let o of order)
+for(let o of order){
 for(let r=0;r<rows;r++)
 res+=grid[r][o[1]]
+}
+
+let vis=""
+for(let r of grid) vis+=r.join(" ")+"\n"
+
+document.getElementById("visual").innerText=vis
 
 return res
 
@@ -381,9 +343,11 @@ let order=[...key].map((c,i)=>[c,i]).sort()
 
 let index=0
 
-for(let o of order)
-for(let r=0;r<rows;r++)
-grid[r][o[1]]=cipher[index++]||""
+for(let o of order){
+for(let r=0;r<rows;r++){
+grid[r][o[1]]=cipher[index++]
+}
+}
 
 let res=""
 
@@ -397,6 +361,178 @@ return res
 
 }
 
+/* Playfair */
+
+function playfairMatrix(key){
+
+key=key.toUpperCase().replace(/J/g,"I")
+
+let alphabet="ABCDEFGHIKLMNOPQRSTUVWXYZ"
+let seen={}
+let matrix=[]
+
+for(let c of key+alphabet){
+if(!seen[c]){
+matrix.push(c)
+seen[c]=true
+}
+}
+
+let grid=[]
+while(matrix.length) grid.push(matrix.splice(0,5))
+
+return grid
+
+}
+
+function findPos(grid,c){
+for(let r=0;r<5;r++)
+for(let c2=0;c2<5;c2++)
+if(grid[r][c2]==c) return [r,c2]
+}
+
+function playfair(text,key,mode){
+
+let grid=playfairMatrix(key)
+text=text.toUpperCase().replace(/J/g,"I").replace(/ /g,"")
+
+let pairs=[]
+
+for(let i=0;i<text.length;i+=2){
+
+let a=text[i]
+let b=text[i+1]||"X"
+
+if(a==b){
+b="X"
+i--
+}
+
+pairs.push([a,b])
+
+}
+
+let res=""
+
+for(let p of pairs){
+
+let [r1,c1]=findPos(grid,p[0])
+let [r2,c2]=findPos(grid,p[1])
+
+if(r1==r2){
+
+if(mode=="enc"){
+res+=grid[r1][(c1+1)%5]
+res+=grid[r2][(c2+1)%5]
+}
+else{
+res+=grid[r1][(c1+4)%5]
+res+=grid[r2][(c2+4)%5]
+}
+
+}
+
+else if(c1==c2){
+
+if(mode=="enc"){
+res+=grid[(r1+1)%5][c1]
+res+=grid[(r2+1)%5][c2]
+}
+else{
+res+=grid[(r1+4)%5][c1]
+res+=grid[(r2+4)%5][c2]
+}
+
+}
+
+else{
+
+res+=grid[r1][c2]
+res+=grid[r2][c1]
+
+}
+
+}
+
+document.getElementById("visual").innerText="5x5 key matrix generated"
+
+return res
+
+}
+
+/* Hill Cipher */
+
+function modInv(a,m){
+
+a=(a%m+m)%m
+
+for(let x=1;x<m;x++)
+if((a*x)%m==1) return x
+
+return 1
+
+}
+
+function hillEncrypt(text,key){
+
+let k=key.split(",").map(Number)
+
+text=text.toUpperCase().replace(/ /g,"")
+
+let res=""
+
+for(let i=0;i<text.length;i+=2){
+
+let a=text.charCodeAt(i)-65
+let b=text.charCodeAt(i+1)-65
+
+let c1=(k[0]*a+k[1]*b)%26
+let c2=(k[2]*a+k[3]*b)%26
+
+res+=String.fromCharCode(c1+65)+String.fromCharCode(c2+65)
+
+}
+
+document.getElementById("visual").innerText="Matrix multiplication applied"
+
+return res
+
+}
+
+function hillDecrypt(text,key){
+
+let k=key.split(",").map(Number)
+
+let det=(k[0]*k[3]-k[1]*k[2])%26
+let invDet=modInv(det,26)
+
+let inv=[
+(k[3]*invDet)%26,
+((-k[1]+26)*invDet)%26,
+((-k[2]+26)*invDet)%26,
+(k[0]*invDet)%26
+]
+
+let res=""
+
+for(let i=0;i<text.length;i+=2){
+
+let a=text.charCodeAt(i)-65
+let b=text.charCodeAt(i+1)-65
+
+let p1=(inv[0]*a+inv[1]*b)%26
+let p2=(inv[2]*a+inv[3]*b)%26
+
+res+=String.fromCharCode(p1+65)+String.fromCharCode(p2+65)
+
+}
+
+document.getElementById("visual").innerText="Inverse matrix applied"
+
+return res
+
+}
+
 /* Controller */
 
 function encrypt(){
@@ -405,28 +541,14 @@ let algo=document.getElementById("algo").value
 let key=document.getElementById("key").value
 let text=document.getElementById("text").value
 
-if(text==""){ error("Enter input text"); return }
-
 let out=""
 
-if(algo=="caesar"){
-if(isNaN(key)){ error("Key must be number"); return }
-out=caesar(text,parseInt(key),"enc")
-}
-
-if(algo=="vigenere"){
-if(!/^[a-zA-Z]+$/.test(key)){ error("Key must be letters"); return }
-out=vigenere(text,key,"enc")
-}
-
-if(algo=="rail"){
-if(isNaN(key)){ error("Key must be numeric"); return }
-out=railEncrypt(text,parseInt(key))
-}
-
-if(algo=="column"){
-out=columnEncrypt(text,key)
-}
+if(algo=="caesar") out=caesar(text,parseInt(key),"enc")
+if(algo=="vigenere") out=vigenere(text,key,"enc")
+if(algo=="rail") out=railEncrypt(text,parseInt(key))
+if(algo=="column") out=columnEncrypt(text,key)
+if(algo=="playfair") out=playfair(text,key,"enc")
+if(algo=="hill") out=hillEncrypt(text,key)
 
 document.getElementById("output").innerText=out
 
@@ -444,6 +566,8 @@ if(algo=="caesar") out=caesar(text,parseInt(key),"dec")
 if(algo=="vigenere") out=vigenere(text,key,"dec")
 if(algo=="rail") out=railDecrypt(text,parseInt(key))
 if(algo=="column") out=columnDecrypt(text,key)
+if(algo=="playfair") out=playfair(text,key,"dec")
+if(algo=="hill") out=hillDecrypt(text,key)
 
 document.getElementById("output").innerText=out
 
